@@ -41,6 +41,19 @@ services:
       retries: 10
       start_period: 15s
 
+  worker:
+    build:
+      context: .
+      dockerfile: src/Order.Worker/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - AWS__ServiceURL=http://localstack:4566
+      - AWS__Region=us-east-1
+      - Messaging__QueueUrl=http://localstack:4566/000000000000/orders
+    depends_on:
+      localstack:
+        condition: service_healthy
+
   k6:
     image: grafana/k6:latest
     volumes:

@@ -3,6 +3,7 @@
     <Project Path="src/Order.Core/Order.Core.csproj" />
     <Project Path="src/Order.Infrastructure/Order.Infrastructure.csproj" />
     <Project Path="src/Order.WebApi/Order.WebApi.csproj" />
+    <Project Path="src/Order.Worker/Order.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Order.WebApi.IntegrationTests/Order.WebApi.IntegrationTests.csproj" />
