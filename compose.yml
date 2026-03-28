@@ -10,3 +10,46 @@ services:
     volumes:
       - "./.localstack/init:/etc/localstack/init/ready.d"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - AWS__ServiceURL=http://localstack:4566
+      - AWS__Region=us-east-1
+      - Messaging__QueueUrl=http://localstack:4566/000000000000/orders
+      - Logging__LogLevel__Default=Warning
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+    depends_on:
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  k6:
+    image: grafana/k6:latest
+    volumes:
+      - "./tests/Order.WebApi.LoadTests:/scripts"
+    environment:
+      - BASE_URL=http://api:8080
+    depends_on:
+      api:
+        condition: service_started
+    command: run /scripts/create-order.js
+    profiles:
+      - load
