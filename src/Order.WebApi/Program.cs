@@ -1,6 +1,7 @@
 var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
 builder.Services.AddSQSProducer<OrderCreatedEvent>("Messaging:QueueUrl");
 
@@ -13,6 +14,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.MapHealthChecks("/health");
 
 app.MapOrderV1Endpoints();
 
