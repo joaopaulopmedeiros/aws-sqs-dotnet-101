@@ -7,12 +7,12 @@ Demo application showcasing an asynchronous event-driven order processing using 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Architecture](#architecture)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
 - [Queue Configuration](#queue-configuration)
+- [Observability](#observability)
 - [Load Testing](#load-testing)
 - [Technology Stack](#technology-stack)
 
@@ -25,8 +25,6 @@ When a client submits an order via the REST API, the request is validated, an `O
 LocalStack is used to emulate the AWS SQS service locally, eliminating the need for an active AWS account during development.
 
 ---
-
-## Architecture
 
 ### Projects
 
@@ -66,6 +64,15 @@ aws-sqs-dotnet-demo/
 │   └── Order.WebApi.LoadTests/     # k6 load tests
 ├── .localstack/init/
 │   └── 01-create-queues.sh         # Queue provisioning script
+├── .otel/                          # OpenTelemetry observability stack config
+│   ├── otel-collector-config.yml
+│   ├── loki.yml
+│   ├── tempo.yml
+│   ├── prometheus.yml
+│   └── grafana/
+│       └── provisioning/
+│           └── datasources/
+│               └── datasources.yml
 ├── compose.yml
 ├── Dockerfile
 └── Makefile
@@ -194,6 +201,52 @@ Messages that fail processing after **3 attempts** are automatically moved to `o
 
 ---
 
+## Observability
+
+The API and Worker are instrumented with **OpenTelemetry** (logs, traces, and metrics), exported via OTLP to a local collector that fans out to the Grafana stack.
+
+### Containers
+
+| Container | Description | Port |
+|---|---|---|
+| `otel-collector` | Receives OTLP and routes signals | `4317` (gRPC), `4318` (HTTP) |
+| `loki` | Log storage | `3100` |
+| `tempo` | Trace storage | `3200` |
+| `prometheus` | Metrics storage | `9090` |
+| `grafana` | Visualisation UI | `3000` |
+
+### Accessing Grafana
+
+Open `http://localhost:3000` — no login required (anonymous access enabled).
+
+The following datasources are provisioned automatically:
+
+| Datasource | URL |
+|---|---|
+| Prometheus | `http://localhost:9090` |
+| Loki | `http://localhost:3100` |
+| Tempo | `http://localhost:3200` |
+
+Tempo is configured with correlations to Loki (trace → logs) and Prometheus (service map).
+
+### Configuration files
+
+All observability configuration lives in `.otel/`:
+
+```
+.otel/
+├── otel-collector-config.yml
+├── loki.yml
+├── tempo.yml
+├── prometheus.yml
+└── grafana/
+    └── provisioning/
+        └── datasources/
+            └── datasources.yml
+```
+
+---
+
 ## Load Testing
 
 A [k6](https://k6.io/) load test script is included to simulate concurrent order creation.
@@ -218,3 +271,4 @@ This command starts a `k6` container (Docker Compose `load` profile) that target
 | Local AWS Emulation | LocalStack |
 | Containerisation | Docker / Docker Compose |
 | Load Testing | k6 |
+| Observability | OpenTelemetry, Loki, Tempo, Prometheus, Grafana |

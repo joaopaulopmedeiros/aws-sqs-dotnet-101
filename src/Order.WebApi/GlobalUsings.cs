@@ -3,6 +3,9 @@ global using FluentValidation.Results;
 
 global using Microsoft.AspNetCore.Mvc;
 
+global using OpenTelemetry.Metrics;
+global using OpenTelemetry.Trace;
+
 global using Order.Core.Events;
 global using Order.Core.Messaging;
 global using Order.Infrastructure;
