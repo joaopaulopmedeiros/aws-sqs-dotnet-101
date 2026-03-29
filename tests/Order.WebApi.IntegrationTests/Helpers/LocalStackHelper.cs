@@ -3,14 +3,14 @@ using DotNet.Testcontainers.Containers;
 
 namespace Order.WebApi.IntegrationTests.Helpers;
 
-public static class LocalStackHelper
+internal static class LocalStackHelper
 {
     private const int LocalstackEdgePort = 4566;
 
-    public static string GetServiceUrl(this IContainer localstack, int port = LocalstackEdgePort) =>
+    internal static string GetServiceUrl(this IContainer localstack, int port = LocalstackEdgePort) =>
         $"http://{localstack.Hostname}:{localstack.GetMappedPublicPort(port)}";
 
-    public static async Task<IContainer> CreateAsync(string services = "sqs,s3")
+    internal static async Task<IContainer> CreateAsync(string services = "sqs,s3")
     {
         string name = $"localstack-test-{Guid.NewGuid():N}";
 
