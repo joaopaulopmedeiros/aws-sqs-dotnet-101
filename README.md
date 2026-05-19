@@ -1,6 +1,6 @@
 # aws-sqs-dotnet-lab
 
-Hands-on demo lab for beginners showcasing an asynchronous, event-driven order processing system using Amazon SQS and .NET 10. The project focuses on simple concepts, step-by-step implementation, and clear explanations to help newcomers understand messaging, queues and event-driven architecture in practice in free-of-charge local setup.
+A hands-on demo lab for beginners showcasing an asynchronous, event-driven order processing system built with Amazon SQS and .NET 10. The project focuses on simple concepts, step-by-step implementation, and clear explanations to help newcomers understand messaging, queues, and event-driven architecture in practice, using a free local setup.
 
 ## Table of Contents
 
