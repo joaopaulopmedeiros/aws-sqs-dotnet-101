@@ -1,4 +1,4 @@
-# aws-sqs-dotnet-101
+# aws-sqs-dotnet-lab
 
 Hands-on demo application for beginners showcasing an asynchronous, event-driven order processing system using Amazon SQS and .NET 10. The project focuses on simple concepts, step-by-step implementation, and clear explanations to help newcomers understand messaging, queues and event-driven architecture in practice.
 
@@ -36,7 +36,7 @@ LocalStack is used to emulate the AWS SQS service locally, eliminating the need 
 ## Project Structure
 
 ```
-aws-sqs-dotnet-101/
+aws-sqs-dotnet-lab/
 ├── src/
 │   ├── Order.Core/                 # Domain models and contracts
 │   │   ├── Events/
@@ -89,8 +89,8 @@ aws-sqs-dotnet-101/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/joaopaulopmedeiros/aws-sqs-dotnet-101.git
-cd aws-sqs-dotnet-101
+git clone https://github.com/joaopaulopmedeiros/aws-sqs-dotnet-lab.git
+cd aws-sqs-dotnet-lab
 ```
 
 ### 2. Start all services

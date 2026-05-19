@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 using Amazon.SQS;
@@ -12,32 +13,45 @@ using Order.Core.Messaging;
 namespace Order.Infrastructure.Messaging;
 
 public sealed class SQSConsumer<TEvent>(
-    IAmazonSQS sqs,
+    IAmazonSQS sqsClient,
     IServiceScopeFactory scopeFactory,
-    string queueUrl,
+    SQSConsumerOptions _options,
     ILogger<SQSConsumer<TEvent>> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("SQS consumer started. Queue: {QueueUrl}", queueUrl);
+        logger.LogConsumerIsSubscribing(_options.Queue);
 
-        while (!stoppingToken.IsCancellationRequested)
+        await Parallel.ForEachAsync(
+            ReceiveMessagesAsync(cancellationToken),
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = _options.MaxDegreeOfParallelism,
+                CancellationToken = cancellationToken
+            },
+            async (message, ct) => await ProcessMessageAsync(message, ct));
+    }
+
+    private async IAsyncEnumerable<Message> ReceiveMessagesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        ReceiveMessageRequest request = new()
         {
-            ReceiveMessageResponse response = await sqs.ReceiveMessageAsync(new ReceiveMessageRequest
-            {
-                QueueUrl = queueUrl,
-                MaxNumberOfMessages = 10,
-                WaitTimeSeconds = 20
-            }, stoppingToken);
+            QueueUrl = _options.Queue,
+            MaxNumberOfMessages = _options.MaxNumberOfMessages,
+            WaitTimeSeconds = _options.WaitTimeSeconds,
+            MessageAttributeNames = ["All"],
+        };
 
-            foreach (Message message in response.Messages)
-            {
-                await ProcessAsync(message, stoppingToken);
-            }
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            ReceiveMessageResponse response = await sqsClient.ReceiveMessageAsync(request, cancellationToken);
+            foreach (Message message in response.Messages ?? [])
+                yield return message;
         }
     }
 
-    private async Task ProcessAsync(Message message, CancellationToken cancellationToken)
+    private async Task ProcessMessageAsync(Message message, CancellationToken cancellationToken)
     {
         try
         {
@@ -48,7 +62,7 @@ public sealed class SQSConsumer<TEvent>(
 
             await handler.HandleAsync(@event, cancellationToken);
 
-            await sqs.DeleteMessageAsync(queueUrl, message.ReceiptHandle, cancellationToken);
+            await sqsClient.DeleteMessageAsync(_options.Queue, message.ReceiptHandle, cancellationToken);
         }
         catch (Exception ex)
         {

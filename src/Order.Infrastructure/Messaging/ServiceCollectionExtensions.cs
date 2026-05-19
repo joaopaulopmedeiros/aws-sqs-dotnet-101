@@ -30,19 +30,26 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddSQSConsumer<TEvent, THandler>(
         this IServiceCollection services,
-        string queueUrlConfigKey)
+        string queueUrlConfigKey,
+        Action<SQSConsumerOptions>? configure = null)
         where THandler : class, IEventHandler<TEvent>
     {
         services.TryAddSQS();
 
         services.AddScoped<IEventHandler<TEvent>, THandler>();
 
-        services.AddHostedService(sp => new SQSConsumer<TEvent>(
-            sp.GetRequiredService<IAmazonSQS>(),
-            sp.GetRequiredService<IServiceScopeFactory>(),
-            sp.GetRequiredService<IConfiguration>()[queueUrlConfigKey]!,
-            sp.GetRequiredService<ILogger<SQSConsumer<TEvent>>>()
-        ));
+        services.AddHostedService(sp =>
+        {
+            IConfiguration configuration = sp.GetRequiredService<IConfiguration>();
+            SQSConsumerOptions options = new() { Queue = configuration[queueUrlConfigKey]! };
+            configure?.Invoke(options);
+
+            return new SQSConsumer<TEvent>(
+                sp.GetRequiredService<IAmazonSQS>(),
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                options,
+                sp.GetRequiredService<ILogger<SQSConsumer<TEvent>>>());
+        });
 
         return services;
     }
