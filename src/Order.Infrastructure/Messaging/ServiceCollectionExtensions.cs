@@ -14,15 +14,18 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddSQSProducer<TEvent>(
         this IServiceCollection services,
-        string queueUrlConfigKey)
+        string configSectionKey,
+        Action<SQSProducerOptions>? configure = null)
     {
         services.TryAddSQS();
 
         services.AddScoped<IProducer<TEvent>>(sp =>
         {
-            IAmazonSQS sqsClient = sp.GetRequiredService<IAmazonSQS>();
             IConfiguration configuration = sp.GetRequiredService<IConfiguration>();
-            return new SQSProducer<TEvent>(sqsClient, configuration[queueUrlConfigKey]!);
+            SQSProducerOptions options = new();
+            configuration.GetSection(configSectionKey).Bind(options);
+            configure?.Invoke(options);
+            return new SQSProducer<TEvent>(sp.GetRequiredService<IAmazonSQS>(), options);
         });
 
         return services;
@@ -30,7 +33,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddSQSConsumer<TEvent, THandler>(
         this IServiceCollection services,
-        string queueUrlConfigKey,
+        string configSectionKey,
         Action<SQSConsumerOptions>? configure = null)
         where THandler : class, IEventHandler<TEvent>
     {
@@ -41,7 +44,8 @@ public static class ServiceCollectionExtensions
         services.AddHostedService(sp =>
         {
             IConfiguration configuration = sp.GetRequiredService<IConfiguration>();
-            SQSConsumerOptions options = new() { Queue = configuration[queueUrlConfigKey]! };
+            SQSConsumerOptions options = new();
+            configuration.GetSection(configSectionKey).Bind(options);
             configure?.Invoke(options);
 
             return new SQSConsumer<TEvent>(

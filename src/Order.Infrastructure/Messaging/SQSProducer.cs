@@ -7,7 +7,7 @@ using Order.Core.Messaging;
 
 namespace Order.Infrastructure.Messaging;
 
-public class SQSProducer<TEvent>(IAmazonSQS sqsClient, string queueUrl) : IProducer<TEvent>
+public sealed class SQSProducer<TEvent>(IAmazonSQS sqsClient, SQSProducerOptions options) : IProducer<TEvent>
 {
     public async Task ProduceAsync(TEvent @event, CancellationToken cancellationToken)
     {
@@ -15,7 +15,7 @@ public class SQSProducer<TEvent>(IAmazonSQS sqsClient, string queueUrl) : IProdu
 
         await sqsClient.SendMessageAsync(new SendMessageRequest
         {
-            QueueUrl = queueUrl,
+            QueueUrl = options.Queue,
             MessageBody = body
         }, cancellationToken);
     }

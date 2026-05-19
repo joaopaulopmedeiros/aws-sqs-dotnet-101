@@ -7,7 +7,7 @@ builder.AddTelemetry("order-api",
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
-builder.Services.AddSQSProducer<OrderCreatedEvent>("Messaging:QueueUrl");
+builder.Services.AddSQSProducer<OrderCreatedEvent>("Messaging");
 
 var app = builder.Build();
 
